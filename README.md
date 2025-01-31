@@ -168,7 +168,31 @@ Enter source NSX manager password: ******************************
 
 If you use local mode, the only other setting in `vmc.ini` that you need to consider is `nsx_endpoint_type`
 
-#### 1.3.4.3 NSX endpoint type
+#### 1.3.4.3 Global Managers
+
+If you enabled Local Mode as shown in the previous section, you have the option of enabling Global Manager mode. This is only necessary if you are running an [NSX Federation](https://techdocs.broadcom.com/us/en/vmware-cis/nsx/vmware-nsx/4-2/installation-guide/getting-started-with-federation.html) with Global Manager. Local mode with Global Manager supports environment variables `EXP_Global_srcNSXmgrURL`, `EXP_Global_srcNSXmgrUsername`, and `EXP_Global_srcNSXmgrPassword`. If you set these environment variables, you do not need to save these values in `vcenter.ini`.
+
+
+Windows:
+
+```powershell
+$env:EXP_Global_srcNSXmgrURL = "https://globalmgr.fqdn.com"
+$env:EXP_Global_srcNSXmgrUsername = "admin"
+$env:EXP_Global_srcNSXmgrPassword = "password-for-admin"
+```
+
+Linux/Mac:
+
+```bash
+EXP_Global_srcNSXmgrURL="https://globalmgr.fqdn.com"
+export EXP_Global_srcNSXmgrURL
+EXP_Global_srcNSXmgrUsername="admin"
+export EXP_Global_srcNSXmgrUsername
+EXP_Global_srcNSXmgrPassword="password-for-admin"
+export EXP_Global_srcNSXmgrPassword
+```
+
+#### 1.3.4.4 NSX endpoint type
 
 `vmc.ini` contains a variable named `nsx_endpoint_type`. It can be set to one of two values:
 
