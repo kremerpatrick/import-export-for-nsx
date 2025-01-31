@@ -1508,7 +1508,7 @@ class VMCImportExport:
             json.dump(vm_vifs, outfile,indent=4)
         return True
 
-    def exportSDDCServices(self,OnlyUserDefinedServices=False):
+    def exportSDDCServices(self,OnlyUserDefinedServices=False, GlobalManagerMode=False):
         """Exports SDDC services to a JSON file
         Args: bool OnlyUserDefinedServices, default True, if you want to ignore predefined system services
         """
@@ -1518,11 +1518,11 @@ class VMCImportExport:
 
         if self.auth_mode =="token":
             myURL = (self.proxy_url + "/policy/api/v1/infra/services")
+        elif GlobalManagerMode is True:
+            myURL = (self.Global_srcNSXmgrURL + "/global-manager/api/v1/global-infra/services")
         else:
             myURL = (self.srcNSXmgrURL + "/policy/api/v1/infra/services")
 
-        print(myURL)
-        #sys.exit()
         if debug_mode:
             myURL += f'?page_size={debug_page_size}'
             print(f'DEBUG, page size set to {debug_page_size}, calling {myURL}')
@@ -1530,8 +1530,8 @@ class VMCImportExport:
         if self.auth_mode == "token":
             response = self.invokeVMCGET(myURL)
         else:
-            response = self.invokeNSXTGET(myURL)
-            
+            response = self.invokeNSXTGET(myURL, GlobalManagerMode=GlobalManagerMode)
+
         if response is None or response.status_code != 200:
             return False
         json_response = response.json()
@@ -1562,7 +1562,10 @@ class VMCImportExport:
                     if service["_create_user"]!= "admin" and service["_create_user"]!="admin;admin" and service["_create_user"]!="system":
                         json.dump(service, outfile,indent=4)
         else:
-            fname = self.export_path / self.services_filename
+            if GlobalManagerMode is True:
+                fname = self.export_path / ("global_" + self.services_filename)
+            else:
+                fname = self.export_path / self.services_filename
             with open(fname, 'w') as outfile:
                 json.dump(sddc_services, outfile,indent=4)
         return True
@@ -2551,13 +2554,22 @@ class VMCImportExport:
             self.lastJSONResponse = e
             return None
 
-    def invokeNSXTGET(self,url: str) -> requests.Response:
-        myHeader = {
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            "Cookie": self.source_nsx_mgr_cookie,
-            "X-XSRF-TOKEN": self.source_nsx_mgr_token
-        }
+    def invokeNSXTGET(self,url: str, GlobalManagerMode=False) -> requests.Response:
+
+        if GlobalManagerMode is True:
+            myHeader = {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "Cookie": self.Global_source_nsx_mgr_cookie,
+                "X-XSRF-TOKEN": self.Global_source_nsx_mgr_token
+            }
+        else:
+            myHeader = {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "Cookie": self.source_nsx_mgr_cookie,
+                "X-XSRF-TOKEN": self.source_nsx_mgr_token
+            }
 
         try:
             response = requests.get(url,headers=myHeader, verify=self.srcNSXmgrSSLVerify)
@@ -4148,16 +4160,25 @@ class VMCImportExport:
         self.user_search_results_json = response.json()
         return True
 
-    def source_nsx_mgr_authenticate(self) -> bool:
-        myURL = (self.srcNSXmgrURL + "/api/session/create")
+    def source_nsx_mgr_authenticate(self, GlobalManagerMode=False) -> bool:
+        if GlobalManagerMode is True:
+            myURL = (self.Global_srcNSXmgrURL + "/api/session/create")
+            json_body = {"j_password":self.Global_srcNSXmgrPassword, "j_username":self.Global_srcNSXmgrUsername}
+        else:
+            myURL = (self.srcNSXmgrURL + "/api/session/create")
+            json_body = {"j_password":self.srcNSXmgrPassword, "j_username":self.srcNSXmgrUsername}            
+
         myHeader = {"Content-Type": "application/json","Accept": "application/json"}
-        json_body = {"j_password":self.srcNSXmgrPassword, "j_username":self.srcNSXmgrUsername}
 
         try:
             response = requests.post(myURL, data=json_body, verify=self.srcNSXmgrSSLVerify)
             if response.status_code == 200:
-                self.source_nsx_mgr_cookie = response.headers["set-cookie"]
-                self.source_nsx_mgr_token = response.headers["x-xsrf-token"]
+                if GlobalManagerMode is True:
+                    self.Global_source_nsx_mgr_cookie = response.headers["set-cookie"]
+                    self.Global_source_nsx_mgr_token = response.headers["x-xsrf-token"]
+                else:
+                    self.source_nsx_mgr_cookie = response.headers["set-cookie"]
+                    self.source_nsx_mgr_token = response.headers["x-xsrf-token"]
                 return True
             else:
                 self.lastJSONResponse = f'API Call Status {response.status_code}, text:{response.text}'

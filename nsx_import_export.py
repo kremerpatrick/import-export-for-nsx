@@ -162,15 +162,15 @@ def main(args):
 
         if ioObj.export_global_manager is True:
             if 'EXP_Global_srcNSXmgrURL' in os.environ:
-                ioObj.srcNSXmgrURL = os.environ['EXP_Global_srcNSXmgrURL']
+                ioObj.Global_srcNSXmgrURL = os.environ['EXP_Global_srcNSXmgrURL']
                 print(f"Loaded Global source NSX manager URL from environment variable: {os.environ['EXP_Global_srcNSXmgrURL']}")
 
             if 'EXP_Global_srcNSXmgrUsername' in os.environ:
-                ioObj.srcNSXmgrUsername = os.environ['EXP_Global_srcNSXmgrUsername']
+                ioObj.Global_srcNSXmgrUsername = os.environ['EXP_Global_srcNSXmgrUsername']
                 print(f"Loaded Global source NSX manager username from environment variable: {os.environ['EXP_Global_srcNSXmgrUsername']}")
 
             if 'EXP_Global_srcNSXmgrPassword' in os.environ:
-                ioObj.srcNSXmgrPassword = os.environ['EXP_Global_srcNSXmgrPassword']
+                ioObj.Global_srcNSXmgrPassword = os.environ['EXP_Global_srcNSXmgrPassword']
                 print(f"Loaded Global source NSX manager password from environment variable: {'*' * len(os.environ['EXP_Global_srcNSXmgrPassword'])}")
     
     else:
@@ -584,8 +584,15 @@ def main(args):
             print(f'Exporting data from NSX-T manager {ioObj.srcNSXmgrURL}')
             success = ioObj.source_nsx_mgr_authenticate()
             if success is False:
-                print("NSX-T manager authentication failed.")
+                print("Local NSX manager authentication failed.")
                 sys.exit()
+
+            if ioObj.export_global_manager is True:
+                print(f'Exporting data from Global NSX manager {ioObj.Global_srcNSXmgrURL}')
+                success = ioObj.source_nsx_mgr_authenticate(GlobalManagerMode=True)
+                if success is False:
+                    print("Global NSX manager authentication failed.")
+                    sys.exit()
 
         if intent_name == "list-t1s":
             json_response = ioObj.get_t1_gateways()
@@ -640,6 +647,14 @@ def main(args):
                 print("SDDC services exported.")
             else:
                 print("SDDC services export error: {}".format(ioObj.lastJSONResponse))
+
+            if ioObj.export_global_manager is True:
+                print("Beginning Global Services export...")
+                retval = ioObj.exportSDDCServices(GlobalManagerMode=True)
+                if retval is True:
+                    print("Global SDDC services exported.")
+                else:
+                    print("Global SDDC services export error: {}".format(ioObj.lastJSONResponse))
 
             print("Beginning Tags export...")
             retval = ioObj.exportSDDCTags()
