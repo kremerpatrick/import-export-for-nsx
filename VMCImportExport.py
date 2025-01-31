@@ -109,6 +109,9 @@ class VMCImportExport:
 
         self.auth_mode                    = vmcConfig.get("vmcConfig", "auth_mode")
         self.nsx_endpoint_type            = vmcConfig.get("vmcConfig", "nsx_endpoint_type")
+        self.export_global_manager        = vmcConfig.get("vmcConfig", "export_global_manager")
+        self.export_global_manager        = self.loadConfigFlag(vmcConfig,"vmcConfig","export_global_manager")
+
         if self.auth_mode == "token":
             self.vmc_auth                 = vmc_auth.VMCAuth(strCSPProdURL=self.strCSPProdURL)
             # If auth mode is token, then the endpoint type must be vmc.
@@ -163,6 +166,12 @@ class VMCImportExport:
         self.srcNSXmgrUsername          =  vCenterConfig.get("nsxConfig","srcNSXmgrUsername")
         self.srcNSXmgrPassword          =  vCenterConfig.get("nsxConfig","srcNSXmgrPassword")
         self.srcNSXmgrSSLVerify         =  self.loadConfigFlag(vCenterConfig,"nsxConfig","srcNSXmgrSSLVerify")
+
+        #NSX manager
+        self.Global_srcNSXmgrURL               =  vCenterConfig.get("nsxConfig","srcGlobalNSXmgrURL")
+        self.Global_srcNSXmgrUsername          =  vCenterConfig.get("nsxConfig","srcGlobalNSXmgrUsername")
+        self.Global_srcNSXmgrPassword          =  vCenterConfig.get("nsxConfig","srcGlobalNSXmgrPassword")
+        self.Global_srcNSXmgrSSLVerify         =  self.loadConfigFlag(vCenterConfig,"nsxConfig","srcGlobalNSXmgrSSLVerify")
 
         # Services
         self.services_import          = self.loadConfigFlag(config,"importConfig","services_import")
@@ -1511,6 +1520,9 @@ class VMCImportExport:
             myURL = (self.proxy_url + "/policy/api/v1/infra/services")
         else:
             myURL = (self.srcNSXmgrURL + "/policy/api/v1/infra/services")
+
+        print(myURL)
+        #sys.exit()
         if debug_mode:
             myURL += f'?page_size={debug_page_size}'
             print(f'DEBUG, page size set to {debug_page_size}, calling {myURL}')

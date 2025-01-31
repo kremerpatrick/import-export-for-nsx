@@ -159,6 +159,20 @@ def main(args):
         if 'EXP_srcNSXmgrPassword' in os.environ:
             ioObj.srcNSXmgrPassword = os.environ['EXP_srcNSXmgrPassword']
             print(f"Loaded source NSX manager password from environment variable: {'*' * len(os.environ['EXP_srcNSXmgrPassword'])}")
+
+        if ioObj.export_global_manager is True:
+            if 'EXP_Global_srcNSXmgrURL' in os.environ:
+                ioObj.srcNSXmgrURL = os.environ['EXP_Global_srcNSXmgrURL']
+                print(f"Loaded Global source NSX manager URL from environment variable: {os.environ['EXP_Global_srcNSXmgrURL']}")
+
+            if 'EXP_Global_srcNSXmgrUsername' in os.environ:
+                ioObj.srcNSXmgrUsername = os.environ['EXP_Global_srcNSXmgrUsername']
+                print(f"Loaded Global source NSX manager username from environment variable: {os.environ['EXP_Global_srcNSXmgrUsername']}")
+
+            if 'EXP_Global_srcNSXmgrPassword' in os.environ:
+                ioObj.srcNSXmgrPassword = os.environ['EXP_Global_srcNSXmgrPassword']
+                print(f"Loaded Global source NSX manager password from environment variable: {'*' * len(os.environ['EXP_Global_srcNSXmgrPassword'])}")
+    
     else:
         print(f"Not loading local NSX environment variables because auth_mode={ioObj.auth_mode}")
 
