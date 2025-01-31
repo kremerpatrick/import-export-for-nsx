@@ -619,7 +619,15 @@ def main(args):
                 print("Unable to retrieve domains.")
 
             for domain in json_response:
-                print(f"Domain: {domain['id']}, path: {domain['path']}, unique_id: {domain['unique_id']}")
+                print(f"Local Domain: {domain['id']}, path: {domain['path']}, unique_id: {domain['unique_id']}")
+
+            if ioObj.export_global_manager is True:
+                json_response = ioObj.get_domains(GlobalManagerMode=True)
+                if json_response is None:
+                    print("Unable to retrieve domains.")
+
+                for domain in json_response:
+                    print(f"Global Domain: {domain['id']}, path: {domain['path']}, unique_id: {domain['unique_id']}")  
             return
 
         # Delete old JSON files

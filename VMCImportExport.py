@@ -1202,11 +1202,15 @@ class VMCImportExport:
         json_response = response.json()
         return json_response
     
-    def get_domains(self):
+    def get_domains(self, GlobalManagerMode=False):
         """Exports Domains"""
         if self.auth_mode =="token":
             myURL = (self.proxy_url + "/policy/api/v1/infra/domains")
             response = self.invokeVMCGET(myURL)
+        elif GlobalManagerMode is True:
+            myURL = (self.Global_srcNSXmgrURL + "/global-manager/api/v1/global-infra/domains")
+            print(myURL)
+            response = self.invokeNSXTGET(myURL, GlobalManagerMode=True)
         else:
             myURL = (self.srcNSXmgrURL + "/policy/api/v1/infra/domains")
             response = self.invokeNSXTGET(myURL)
