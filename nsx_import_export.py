@@ -678,6 +678,14 @@ def main(args):
             else:
                 print("Domains export error: {}".format(ioObj.lastJSONResponse))
 
+            if ioObj.export_global_manager is True:
+                print("Beginning Global Domains export...")
+                retval = ioObj.export_domains(GlobalManagerMode=True)
+                if retval is True:
+                    print("Global Domains exported.")
+                else:
+                    print("Global Domains export error: {}".format(ioObj.lastJSONResponse))                
+
             print("Beginning Gateway Policies export...")
             retval = ioObj.export_gateway_policies()
             if retval is True:

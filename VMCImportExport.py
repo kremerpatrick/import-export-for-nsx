@@ -1209,7 +1209,6 @@ class VMCImportExport:
             response = self.invokeVMCGET(myURL)
         elif GlobalManagerMode is True:
             myURL = (self.Global_srcNSXmgrURL + "/global-manager/api/v1/global-infra/domains")
-            print(myURL)
             response = self.invokeNSXTGET(myURL, GlobalManagerMode=True)
         else:
             myURL = (self.srcNSXmgrURL + "/policy/api/v1/infra/domains")
@@ -1450,12 +1449,15 @@ class VMCImportExport:
             json.dump(json_response, outfile,indent=4)
             return True            
         
-    def export_domains(self):
+    def export_domains(self, GlobalManagerMode=False):
         """Exports all VMs found in the NSX-T manager"""
 
         if self.auth_mode =="token":
             myURL = (self.proxy_url + "/policy/api/v1/infra/domains")
             response = self.invokeVMCGET(myURL)
+        elif GlobalManagerMode is True:
+            myURL = (self.Global_srcNSXmgrURL + "/global-manager/api/v1/global-infra/domains")
+            response = self.invokeNSXTGET(myURL, GlobalManagerMode=GlobalManagerMode)            
         else:
             myURL = (self.srcNSXmgrURL + "/policy/api/v1/infra/domains")
             response = self.invokeNSXTGET(myURL)
@@ -1465,7 +1467,10 @@ class VMCImportExport:
         json_response = response.json()
         domains_list = json_response['results']
 
-        fname = self.export_path / self.domains_filename
+        if GlobalManagerMode is True:
+            fname = self.export_path / ("global_" + self.domains_filename)
+        else:
+            fname = self.export_path / self.domains_filename
         with open(fname, 'w') as outfile:
             json.dump(domains_list, outfile,indent=4)
         return True
