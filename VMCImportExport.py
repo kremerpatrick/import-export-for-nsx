@@ -2697,7 +2697,7 @@ class VMCImportExport:
             print(f'TEST MODE: would have deleted CGW group {group_name}')
             return True
 
-    def exportSDDCCGWGroups(self):
+    def exportSDDCCGWGroups(self, GlobalManagerMode=False):
             """Exports the CGW groups to a JSON file"""
 
             if self.auth_mode =="token":
@@ -2708,6 +2708,8 @@ class VMCImportExport:
 
             if self.auth_mode =="token":
                 myURL = (self.proxy_url + f"/policy/api/v1/infra/domains/{self.nsx_domain_name}/groups")
+            elif GlobalManagerMode is True:
+                myURL = (self.Global_srcNSXmgrURL + f"/global-manager/api/v1/global-infra/domains/{self.nsx_domain_name}/groups")           
             else:
                 myURL = (self.srcNSXmgrURL+ f"/policy/api/v1/infra/domains/{self.nsx_domain_name}/groups")
 
@@ -2719,7 +2721,7 @@ class VMCImportExport:
             if self.auth_mode == "token":
                 response = self.invokeVMCGET(myURL)
             else:
-                response = self.invokeNSXTGET(myURL)
+                response = self.invokeNSXTGET(myURL, GlobalManagerMode=GlobalManagerMode)
             if response is None or response.status_code != 200:
                 return False
             json_response = response.json()
@@ -2731,18 +2733,25 @@ class VMCImportExport:
             # After grabbing an intial set of results, check for presence of a cursor
             while "cursor" in json_response:
                 result_count -= debug_page_size
-                myURL = self.proxy_url + f"/policy/api/v1/infra/domains/{self.nsx_domain_name}/groups?cursor=" + json_response['cursor']
+                if GlobalManagerMode is True:
+                    myURL = self.proxy_url + f"/global-manager/api/v1/global-infra/domains/{self.nsx_domain_name}/groups?cursor=" + json_response['cursor']
+                else:
+                    myURL = self.proxy_url + f"/policy/api/v1/infra/domains/{self.nsx_domain_name}/groups?cursor=" + json_response['cursor']
                 if debug_mode:
                     print(f'{result_count} records to go.')
                     myURL += f'&page_size={debug_page_size}'
                     print(f'DEBUG, page size set to {debug_page_size}, calling {myURL}')
-                response = self.invokeVMCGET(myURL)
+                response = self.invokeVMCGET(myURL, GlobalManagerMode=GlobalManagerMode)
                 if response is None or response.status_code != 200:
                     return False
                 json_response = response.json()
                 cgw_groups.extend(json_response['results'])
 
-            fname = self.export_path / self.cgw_groups_filename
+            if GlobalManagerMode is True:
+                fname = self.export_path / ("global_" + self.cgw_groups_filename)
+            else:
+                fname = self.export_path / self.cgw_groups_filename
+
             with open(fname, 'w') as outfile:
                 json.dump(cgw_groups, outfile,indent=4)
 

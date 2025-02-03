@@ -738,6 +738,14 @@ def main(args):
             else:
                 print("CGW groups export error: {}".format(ioObj.lastJSONResponse))
 
+            if ioObj.export_global_manager is True:
+                retval = ioObj.exportSDDCCGWGroups(GlobalManagerMode=True)
+                if retval is True:
+                    print("Global CGW groups exported.")
+                else:
+                    print("Global CGW groups export error: {}".format(ioObj.lastJSONResponse))
+
+
             if ioObj.nsx_endpoint_type == "vmc":
                 retval = ioObj.exportSDDCCGWRule()
                 if retval is True:
