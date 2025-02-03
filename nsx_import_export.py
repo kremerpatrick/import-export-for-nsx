@@ -693,6 +693,13 @@ def main(args):
             else:
                 print("Gateway policy export error: {}".format(ioObj.lastJSONResponse))
 
+            if ioObj.export_global_manager is True:
+                retval = ioObj.export_gateway_policies(GlobalManagerMode=True)
+                if retval is True:
+                    print("Global Gateway Policies exported.")
+                else:
+                    print("Gateway policy export error: {}".format(ioObj.lastJSONResponse))                
+
             print("Beginning VMs export...")
             retval = ioObj.exportSDDCVMs()
             if retval is True:

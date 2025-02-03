@@ -1220,11 +1220,14 @@ class VMCImportExport:
         json_response = response.json()
         return json_response['results']
 
-    def get_gateway_policies(self):
+    def get_gateway_policies(self, GlobalManagerMode=False):
         """Exports a list of all Gateway policies"""
         if self.auth_mode =="token":
             myURL = (self.proxy_url + "/policy/api/v1/infra/domains/default/gateway-policies")
             response = self.invokeVMCGET(myURL)
+        elif GlobalManagerMode is True:
+            myURL = (self.Global_srcNSXmgrURL + "/global-manager/api/v1/global-infra/domains/default/gateway-policies")
+            response = self.invokeNSXTGET(myURL, GlobalManagerMode=GlobalManagerMode)                
         else:
             myURL = (self.srcNSXmgrURL + "/policy/api/v1/infra/domains/default/gateway-policies")
             response = self.invokeNSXTGET(myURL)
@@ -1439,12 +1442,16 @@ class VMCImportExport:
             json.dump(sddc_tags, outfile,indent=4)
         return True        
 
-    def export_gateway_policies(self):
+    def export_gateway_policies(self, GlobalManagerMode=False):
         """Exports all gateway policies found in the NSX-T manager"""
-        json_response = self.get_gateway_policies()
-        if json_response is False:
+        json_response = self.get_gateway_policies(GlobalManagerMode=GlobalManagerMode)
+        if json_response is False:  
             return False
-        fname = self.export_path / self.gateway_policy_filename
+
+        if GlobalManagerMode is True:
+            fname = self.export_path / ("global_" + self.gateway_policy_filename)
+        else:
+            fname = self.export_path / self.gateway_policy_filename
         with open(fname, 'w') as outfile:
             json.dump(json_response, outfile,indent=4)
             return True            
