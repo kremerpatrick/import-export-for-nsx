@@ -849,17 +849,20 @@ class VMCImportExport:
             json.dump(sddc_MGWrules, outfile,indent=4)
         return True
 
-    def export_t1_gateways(self):
-        gateways_json = self.get_t1_gateways()
+    def export_t1_gateways(self, GlobalManagerMode = False):
+        gateways_json = self.get_t1_gateways(GlobalManagerMode=GlobalManagerMode)
         if gateways_json:
-            fname = self.export_path / self.tier1_gateways_filename
+            if GlobalManagerMode is True:
+                fname = self.export_path / ("global_" + self.tier1_gateways_filename)
+            else:
+                fname = self.export_path / self.tier1_gateways_filename
             with open(fname, 'w') as outfile:
                 json.dump(gateways_json['results'], outfile,indent=4)
             return True
         else:
             return False
 
-    def exportSDDCCGWRule(self, gateway_policy_id: str = None):
+    def exportSDDCCGWRule(self, gateway_policy_id: str = None, GlobalManagerMode = False):
         """Exports the CGW firewall rules to a JSON file"""
         if self.auth_mode =="token":
             myURL = (self.proxy_url + f"/policy/api/v1/infra/domains/{self.nsx_domain_name}/gateway-policies/default/rules")
@@ -868,9 +871,13 @@ class VMCImportExport:
             if self.nsx_endpoint_type == "vmc":
                 myURL = (self.srcNSXmgrURL + f"/policy/api/v1/infra/domains/{self.nsx_domain_name}/gateway-policies/default/rules")
             else:
-                myURL = (self.srcNSXmgrURL + f"/policy/api/v1/infra/domains/{self.nsx_domain_name}/gateway-policies/{gateway_policy_id}/rules")
+                if GlobalManagerMode is True:
+                    myURL = (self.Global_srcNSXmgrURL + f"/global-manager/api/v1/global-infra/domains/{self.nsx_domain_name}/gateway-policies/{gateway_policy_id}/rules")
+                    response = self.invokeNSXTGET(myURL, GlobalManagerMode=GlobalManagerMode) 
+                else:
+                    myURL = (self.srcNSXmgrURL + f"/policy/api/v1/infra/domains/{self.nsx_domain_name}/gateway-policies/{gateway_policy_id}/rules")
 
-            response = self.invokeNSXTGET(myURL)
+            response = self.invokeNSXTGET(myURL, GlobalManagerMode=GlobalManagerMode)
 
         if response is None or response.status_code != 200:
             return False
@@ -884,11 +891,18 @@ class VMCImportExport:
                     sddc_CGWrules.remove(rule)
                     print(f"Suppressed default VTI rule, cgw_suppress_vti_export={self.cgw_suppress_vti_export}")
 
+
         if gateway_policy_id is None:
-            fname = self.export_path / self.cgw_export_filename
+            if GlobalManagerMode is True:
+                fname = self.export_path / ("global_" + self.cgw_export_filename)
+            else:
+                fname = self.export_path / self.cgw_export_filename
         else:
             base_name, extension = self.cgw_export_filename.rsplit(".")
-            fname =  self.export_path / (base_name + "-" + gateway_policy_id + "." + extension)
+            if GlobalManagerMode is True:
+                fname =  self.export_path / ("global_" + base_name + "-" + gateway_policy_id + "." + extension)
+            else:
+                fname =  self.export_path / (base_name + "-" + gateway_policy_id + "." + extension)
 
         with open(fname, 'w') as outfile:
             json.dump(sddc_CGWrules, outfile,indent=4)
@@ -1188,14 +1202,18 @@ class VMCImportExport:
             json.dump(ral_results, outfile, indent=4)
         return True
 
-    def get_t1_gateways(self):
+    def get_t1_gateways(self, GlobalManagerMode = False):
         """Exports T1 Gateways"""
         if self.auth_mode =="token":
             myURL = (self.proxy_url + "/policy/api/v1/infra/tier-1s")
             response = self.invokeVMCGET(myURL)
         else:
-            myURL = (self.srcNSXmgrURL + "/policy/api/v1/infra/tier-1s")
-            response = self.invokeNSXTGET(myURL)
+            if GlobalManagerMode is True:
+                myURL = (self.Global_srcNSXmgrURL  + "/global-manager/api/v1/global-infra/tier-1s")
+            else:
+                myURL = (self.srcNSXmgrURL + "/policy/api/v1/infra/tier-1s")
+
+            response = self.invokeNSXTGET(myURL, GlobalManagerMode=GlobalManagerMode)
 
         if response is None or response.status_code != 200:
             return False

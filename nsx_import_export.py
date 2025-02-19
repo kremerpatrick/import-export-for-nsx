@@ -761,11 +761,28 @@ def main(args):
                 else:
                     print("No gateway policies were found, unable to export firewall rules.")
 
+
+                if ioObj.export_global_manager is True:
+                    policy_json = ioObj.get_gateway_policies(GlobalManagerMode=True)
+                    if policy_json:
+                        for policy in policy_json:
+                            print(f"Exporting Global policy {policy['id']}")
+                            retval = ioObj.exportSDDCCGWRule(gateway_policy_id=policy['id'], GlobalManagerMode=True)
+                    else:
+                        print("No Global gateway policies were found, unable to export Global firewall rules.")                            
+
                 retval = ioObj.export_t1_gateways()
                 if retval is True:
                     print("T1 gateways exported.")
                 else:
-                    print("T1 gateway export error: {}".format(ioObj.lastJSONResponse))  
+                    print("T1 gateway export error: {}".format(ioObj.lastJSONResponse))
+
+                if ioObj.export_global_manager is True:
+                    retval = ioObj.export_t1_gateways(GlobalManagerMode=True)
+                    if retval is True:
+                        print("Global T1 gateways exported.")
+                    else:
+                        print("Global T1 gateway export error: {}".format(ioObj.lastJSONResponse))                      
 
         else:
             print("CGW export skipped.")
