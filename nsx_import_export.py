@@ -850,11 +850,18 @@ def main(args):
 
         if ioObj.network_export is True:
             print("Beginning network segments export...")
-            retval = ioObj.exportSDDCCGWnetworks()
+            retval = ioObj.exportSDDCCGWnetworks(GlobalManagerMode=False)
             if retval is True:
                 print("Networks exported.")
             else:
                 print("Networks export error: {}".format(ioObj.lastJSONResponse))
+
+            print("Beginning Global network segments export...")
+            retval = ioObj.exportSDDCCGWnetworks(GlobalManagerMode=True)
+            if retval is True:
+                print("Global networks exported.")
+            else:
+                print("Global networks export error: {}".format(ioObj.lastJSONResponse))                
         else:
             print("Network segment export skipped.")
         

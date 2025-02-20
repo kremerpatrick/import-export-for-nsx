@@ -741,7 +741,7 @@ class VMCImportExport:
                         print("TEST MODE - DFW rule " + commEnt["display_name"] + " would have been imported.")
         return True
 
-    def exportSDDCCGWnetworks(self):
+    def exportSDDCCGWnetworks(self, GlobalManagerMode=False):
         """Exports the CGW network segments to a JSON file"""
 
         if self.auth_mode =="token":
@@ -750,16 +750,22 @@ class VMCImportExport:
         else:
             if self.nsx_endpoint_type == "vmc":
                 myURL = (self.srcNSXmgrURL + f"/policy/api/v1/infra/tier-1s/{self.t1_api_name}/segments")
+            elif GlobalManagerMode is True:
+                myURL = (self.Global_srcNSXmgrURL + f"/global-manager/api/v1/global-infra/segments/")
             else:
                 myURL = (self.srcNSXmgrURL + f"/policy/api/v1/infra/segments/")
 
-            response = self.invokeNSXTGET(myURL)
+            response = self.invokeNSXTGET(myURL, GlobalManagerMode=GlobalManagerMode)
 
         if response is None or response.status_code != 200:
             return False
         json_response = response.json()
         cgw_networks = json_response['results']
-        fname = self.export_path / self.network_export_filename
+        
+        if GlobalManagerMode is True:
+            fname = self.export_path / ("global_" + self.network_export_filename)        
+        else:
+            fname = self.export_path / self.network_export_filename
         with open(fname, 'w') as outfile:
             json.dump(cgw_networks, outfile,indent=4)
 
