@@ -1532,12 +1532,18 @@ class VMCImportExport:
         while "cursor" in json_response:
             #print(json_response)
             result_count -= debug_page_size
-            myURL = self.proxy_url + "/policy/api/v1/infra/services?cursor=" + json_response['cursor']
+            if self.auth_mode =="token":
+                myURL = self.proxy_url + "/policy/api/v1/infra/services?cursor=" + json_response['cursor']
+            else:
+                myURL = self.srcNSXmgrURL + "/policy/api/v1/infra/services?cursor=" + json_response['cursor']
             if debug_mode:
                 print(f'{result_count} records to go.')
                 myURL += f'&page_size={debug_page_size}'
                 print(f'DEBUG, page size set to {debug_page_size}, calling {myURL}')
-            response = self.invokeVMCGET(myURL)
+            if self.auth_mode == "token":
+                response = self.invokeVMCGET(myURL)
+            else:
+                response = self.invokeNSXTGET(myURL)
             if response is None or response.status_code != 200:
                 return False
             json_response = response.json()
@@ -2691,12 +2697,20 @@ class VMCImportExport:
             # After grabbing an intial set of results, check for presence of a cursor
             while "cursor" in json_response:
                 result_count -= debug_page_size
-                myURL = self.proxy_url + f"/policy/api/v1/infra/domains/{self.nsx_domain_name}/groups?cursor=" + json_response['cursor']
+                if self.auth_mode =="token":
+                    myURL = self.proxy_url + f"/policy/api/v1/infra/domains/{self.nsx_domain_name}/groups?cursor=" + json_response['cursor']
+                else:
+                    myURL = self.srcNSXmgrURL+ f"/policy/api/v1/infra/domains/{self.nsx_domain_name}/groups?cursor=" + json_response['cursor']
                 if debug_mode:
                     print(f'{result_count} records to go.')
                     myURL += f'&page_size={debug_page_size}'
                     print(f'DEBUG, page size set to {debug_page_size}, calling {myURL}')
-                response = self.invokeVMCGET(myURL)
+                    
+                    if self.auth_mode == "token":
+                        response = self.invokeVMCGET(myURL)
+                    else:
+                        response = self.invokeNSXTGET(myURL)
+
                 if response is None or response.status_code != 200:
                     return False
                 json_response = response.json()
