@@ -208,19 +208,19 @@ For a VMware Cloud on AWS endpoint, run the following command to export:
 Windows
 
 ```powershell
-python ./nsx_import_export.py -o export
+python ./src/nsx_import_export.py -o export
 ```
 
 Linux/Mac
 
 ```bash
-python3 nsx_import_export.py -o export
+python3 ./src/nsx_import_export.py -o export
 ```
 
 On MacOS, you may have to specify the Python version in your command. For example, if you install Python 3.12, you might have execute `python3.12` instead of `python3`, as `python3` may default to the MacOS default of Python 3.8. You can resolve this by either typing the command as:
 
  ```bash
- python3 nsx_import_export.py -o export
+ python3 ./src/nsx_import_export.py -o export
  ```
 
  Alternatively, you could create an alias in your `~/.profile` and use the alias as your command.
