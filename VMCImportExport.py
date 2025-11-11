@@ -2706,10 +2706,10 @@ class VMCImportExport:
                     myURL += f'&page_size={debug_page_size}'
                     print(f'DEBUG, page size set to {debug_page_size}, calling {myURL}')
                     
-                    if self.auth_mode == "token":
-                        response = self.invokeVMCGET(myURL)
-                    else:
-                        response = self.invokeNSXTGET(myURL)
+                if self.auth_mode == "token":
+                    response = self.invokeVMCGET(myURL)
+                else:
+                    response = self.invokeNSXTGET(myURL)
 
                 if response is None or response.status_code != 200:
                     return False
