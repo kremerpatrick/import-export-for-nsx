@@ -886,6 +886,70 @@ def main(args):
         else:
             print(f'NSX L7 Context Profile export skipped: nsx_l7_context_profile_export={ioObj.nsx_l7_context_profile_export}, auth_mode={ioObj.auth_mode} ')
 
+        if ioObj.global_export is True:
+            print("Beginning NSX Global Infra export (Federation objects)...")
+
+            retval = ioObj.export_global_tier0s()
+            if retval is True:
+                print("Global Tier-0 gateways exported.")
+            else:
+                print("Global Tier-0 gateways export returned no results or error.")
+
+            retval = ioObj.export_global_tier1s()
+            if retval is True:
+                print("Global Tier-1 gateways exported.")
+            else:
+                print("Global Tier-1 gateways export returned no results or error.")
+
+            retval = ioObj.export_global_segments()
+            if retval is True:
+                print("Global segments exported.")
+            else:
+                print("Global segments export returned no results or error.")
+
+            retval = ioObj.export_global_services()
+            if retval is True:
+                print("Global services exported.")
+            else:
+                print("Global services export returned no results or error.")
+
+            # Fetch global domains once and reuse for groups, DFW, gateway policies, and rules
+            global_domains = ioObj._get_global_domains()
+            if global_domains is False:
+                print("Could not retrieve global domains - skipping domain-dependent global exports.")
+            else:
+                retval = ioObj.export_global_domains(domains=global_domains)
+                if retval is True:
+                    print("Global domains exported.")
+                else:
+                    print("Global domains export error.")
+
+                retval = ioObj.export_global_groups(domains=global_domains)
+                if retval is True:
+                    print("Global groups exported.")
+                else:
+                    print("Global groups export returned no results or error.")
+
+                retval = ioObj.export_global_dfw(domains=global_domains)
+                if retval is True:
+                    print("Global DFW security policies and rules exported.")
+                else:
+                    print("Global DFW export returned no results or error.")
+
+                retval = ioObj.export_global_gateway_policies(domains=global_domains)
+                if retval is True:
+                    print("Global gateway policies exported.")
+                else:
+                    print("Global gateway policies export returned no results or error.")
+
+                retval = ioObj.export_global_cgw_rules(domains=global_domains)
+                if retval is True:
+                    print("Global gateway firewall rules exported.")
+                else:
+                    print("Global gateway firewall rules export returned no results or error.")
+        else:
+            print("Global Infra export skipped.")
+
         if ioObj.export_history is True:
             retval = ioObj.zipJSONfiles()
             if retval is False:

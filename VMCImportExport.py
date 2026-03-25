@@ -355,6 +355,19 @@ class VMCImportExport:
         self.nsx_l7_context_profile_import = self.loadConfigFlag(config, 'importConfig', 'nsx_l7_context_profile_import')
         self.nsx_l7_context_profile_import_filename = self.loadConfigFilename(config, 'importConfig', 'nsx_l7_context_profile_import_filename')
 
+        #NSX Global Objects (Federation)
+        self.global_export = self.loadConfigFlag(config, "exportConfig", "global_export")
+        self.global_tier0s_export_filename = self.loadConfigFilename(config, "exportConfig", "global_tier0s_export_filename")
+        self.global_tier1s_export_filename = self.loadConfigFilename(config, "exportConfig", "global_tier1s_export_filename")
+        self.global_segments_export_filename = self.loadConfigFilename(config, "exportConfig", "global_segments_export_filename")
+        self.global_domains_export_filename = self.loadConfigFilename(config, "exportConfig", "global_domains_export_filename")
+        self.global_groups_export_filename = self.loadConfigFilename(config, "exportConfig", "global_groups_export_filename")
+        self.global_dfw_export_filename = self.loadConfigFilename(config, "exportConfig", "global_dfw_export_filename")
+        self.global_dfw_detailed_export_filename = self.loadConfigFilename(config, "exportConfig", "global_dfw_detailed_export_filename")
+        self.global_gateway_policies_export_filename = self.loadConfigFilename(config, "exportConfig", "global_gateway_policies_export_filename")
+        self.global_cgw_export_filename = self.loadConfigFilename(config, "exportConfig", "global_cgw_export_filename")
+        self.global_services_export_filename = self.loadConfigFilename(config, "exportConfig", "global_services_export_filename")
+
         #SDDC Info
         self.sddc_info_filename     = self.loadConfigFilename(config,"exportConfig","sddc_info_filename")
         self.sddc_info_hide_sensitive_data = self.loadConfigFlag(config,"exportConfig","sddc_info_hide_sensitive_data")
@@ -1456,7 +1469,191 @@ class VMCImportExport:
         with open(fname, 'w') as outfile:
             json.dump(domains_list, outfile,indent=4)
         return True
-    
+
+    # ---- Global Infra export methods (NSX Federation) ----
+
+    def _global_infra_get(self, path):
+        """Helper to GET from /policy/api/v1/global-infra/... using the appropriate auth mode.
+        Returns the response object, or None on failure."""
+        if self.auth_mode == "token":
+            myURL = self.proxy_url + "/policy/api/v1/global-infra" + path
+            response = self.invokeVMCGET(myURL)
+        else:
+            myURL = self.srcNSXmgrURL + "/policy/api/v1/global-infra" + path
+            response = self.invokeNSXTGET(myURL)
+        return response
+
+    def _get_global_domains(self):
+        """Fetches global domains list. Returns list of domain dicts, or False on failure."""
+        response = self._global_infra_get("/domains")
+        if response is None or response.status_code != 200:
+            return False
+        return response.json()['results']
+
+    def export_global_tier0s(self):
+        """Exports global Tier-0 gateways to a JSON file"""
+        response = self._global_infra_get("/tier-0s")
+        if response is None or response.status_code != 200:
+            return False
+        results = response.json()['results']
+        fname = self.export_path / self.global_tier0s_export_filename
+        with open(fname, 'w') as outfile:
+            json.dump(results, outfile, indent=4)
+        return True
+
+    def export_global_tier1s(self):
+        """Exports global Tier-1 gateways to a JSON file"""
+        response = self._global_infra_get("/tier-1s")
+        if response is None or response.status_code != 200:
+            return False
+        results = response.json()['results']
+        fname = self.export_path / self.global_tier1s_export_filename
+        with open(fname, 'w') as outfile:
+            json.dump(results, outfile, indent=4)
+        return True
+
+    def export_global_segments(self):
+        """Exports global segments to a JSON file"""
+        response = self._global_infra_get("/segments")
+        if response is None or response.status_code != 200:
+            return False
+        results = response.json()['results']
+        fname = self.export_path / self.global_segments_export_filename
+        with open(fname, 'w') as outfile:
+            json.dump(results, outfile, indent=4)
+        return True
+
+    def export_global_services(self):
+        """Exports global services to a JSON file"""
+        response = self._global_infra_get("/services")
+        if response is None or response.status_code != 200:
+            return False
+        results = response.json()['results']
+        fname = self.export_path / self.global_services_export_filename
+        with open(fname, 'w') as outfile:
+            json.dump(results, outfile, indent=4)
+        return True
+
+    def export_global_domains(self, domains=None):
+        """Exports global domains to a JSON file.
+        If domains list is provided, uses it instead of fetching again."""
+        if domains is None:
+            domains = self._get_global_domains()
+        if domains is False:
+            return False
+        fname = self.export_path / self.global_domains_export_filename
+        with open(fname, 'w') as outfile:
+            json.dump(domains, outfile, indent=4)
+        return True
+
+    def export_global_groups(self, domains=None):
+        """Exports global groups for all global domains to a JSON file.
+        If domains list is provided, uses it instead of fetching again."""
+        if domains is None:
+            domains = self._get_global_domains()
+        if domains is False:
+            return False
+
+        all_groups = {}
+        for domain in domains:
+            domain_id = domain['id']
+            response = self._global_infra_get(f"/domains/{domain_id}/groups")
+            if response is None or response.status_code != 200:
+                print(f"  Warning: could not retrieve global groups for domain {domain_id}")
+                continue
+            all_groups[domain_id] = response.json()['results']
+
+        fname = self.export_path / self.global_groups_export_filename
+        with open(fname, 'w') as outfile:
+            json.dump(all_groups, outfile, indent=4)
+        return True
+
+    def export_global_dfw(self, domains=None):
+        """Exports global DFW security policies and rules for all global domains.
+        If domains list is provided, uses it instead of fetching again."""
+        if domains is None:
+            domains = self._get_global_domains()
+        if domains is False:
+            return False
+
+        all_policies = {}
+        all_detailed = {}
+        for domain in domains:
+            domain_id = domain['id']
+            response = self._global_infra_get(f"/domains/{domain_id}/security-policies")
+            if response is None or response.status_code != 200:
+                print(f"  Warning: could not retrieve global security policies for domain {domain_id}")
+                continue
+            policies = response.json()['results']
+            all_policies[domain_id] = policies
+
+            domain_details = {}
+            for policy in policies:
+                rules_response = self._global_infra_get(f"/domains/{domain_id}/security-policies/{policy['id']}/rules")
+                if rules_response is not None and rules_response.status_code == 200:
+                    domain_details[policy['id']] = rules_response.json()
+            all_detailed[domain_id] = domain_details
+
+        fname = self.export_path / self.global_dfw_export_filename
+        with open(fname, 'w') as outfile:
+            json.dump(all_policies, outfile, indent=4)
+
+        fname_detailed = self.export_path / self.global_dfw_detailed_export_filename
+        with open(fname_detailed, 'w') as outfile:
+            json.dump(all_detailed, outfile, indent=4)
+        return True
+
+    def export_global_gateway_policies(self, domains=None):
+        """Exports global gateway policies for all global domains.
+        If domains list is provided, uses it instead of fetching again."""
+        if domains is None:
+            domains = self._get_global_domains()
+        if domains is False:
+            return False
+
+        all_gw_policies = {}
+        for domain in domains:
+            domain_id = domain['id']
+            response = self._global_infra_get(f"/domains/{domain_id}/gateway-policies")
+            if response is None or response.status_code != 200:
+                print(f"  Warning: could not retrieve global gateway policies for domain {domain_id}")
+                continue
+            all_gw_policies[domain_id] = response.json()['results']
+
+        fname = self.export_path / self.global_gateway_policies_export_filename
+        with open(fname, 'w') as outfile:
+            json.dump(all_gw_policies, outfile, indent=4)
+        return True
+
+    def export_global_cgw_rules(self, domains=None):
+        """Exports global gateway firewall rules for all global domains and gateway policies.
+        If domains list is provided, uses it instead of fetching again."""
+        if domains is None:
+            domains = self._get_global_domains()
+        if domains is False:
+            return False
+
+        all_rules = {}
+        for domain in domains:
+            domain_id = domain['id']
+            gw_pol_response = self._global_infra_get(f"/domains/{domain_id}/gateway-policies")
+            if gw_pol_response is None or gw_pol_response.status_code != 200:
+                continue
+            gw_policies = gw_pol_response.json()['results']
+            domain_rules = {}
+            for gw_policy in gw_policies:
+                rules_response = self._global_infra_get(f"/domains/{domain_id}/gateway-policies/{gw_policy['id']}/rules")
+                if rules_response is not None and rules_response.status_code == 200:
+                    domain_rules[gw_policy['id']] = rules_response.json()['results']
+            all_rules[domain_id] = domain_rules
+
+        fname = self.export_path / self.global_cgw_export_filename
+        with open(fname, 'w') as outfile:
+            json.dump(all_rules, outfile, indent=4)
+        return True
+
+    # ---- End Global Infra export methods ----
+
     def exportSDDCVMs(self):
         """Exports all VMs found in the NSX-T manager"""
 
